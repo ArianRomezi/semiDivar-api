@@ -8,6 +8,7 @@ const { Types } = require("mongoose");
 const { removePropertyInObject } = require("../../common/utils/functions");
 const { getAddressDetail } = require("../../common/utils/http");
 const utf8 = require("utf8");
+const PostModel = require("./post.model");
 class PostController {
   #service;
   success_message;
@@ -15,6 +16,8 @@ class PostController {
     autoBind(this);
     this.#service = postService;
   }
+
+  //data for post page
   async createPostPage(req, res, next) {
     try {
       let { slug } = req.query;
@@ -47,10 +50,12 @@ class PostController {
       next(error);
     }
   }
+
   async create(req, res, next) {
     try {
       const userId = req.user._id;
       const images = req?.files?.map((image) => image?.path?.slice(7));
+
       const {
         title_post: title,
         description: content,
@@ -135,10 +140,56 @@ class PostController {
       next(error);
     }
   }
+  async showAdminPost(req, res, next) {
+    try {
+      const post = await PostModel.find();
+
+      res.json({
+        post,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+  async FindPost(req, res, next) {
+    const query = req.query;
+    console.log(query);
+    try {
+      const post = await PostModel.find({ $text: { $search: query?.q } });
+
+      res.json({
+        post,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+  async changeStatus(req, res, next) {
+    try {
+      const { id } = req.params;
+      const post = await PostModel.findByIdAndUpdate(id, {
+        $set: {
+          public: true,
+        },
+      });
+
+      // console.log(post);
+      res.json({
+        post,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
   async postList(req, res, next) {
     try {
-      const query = req.query;
-      const posts = await this.#service.findAll(query);
+      const query = req?.query?.q;
+
+      const posts = await PostModel.find({
+        public: true,
+        ...(!query ? {} : { $text: { $search: query } }),
+      });
+
       res.json({
         posts,
       });

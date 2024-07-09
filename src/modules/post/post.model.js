@@ -14,10 +14,12 @@ const PostSchema = new Schema(
     coordinate: { type: [Number], required: false }, //51.215485487, 52.687524154
     images: { type: [String], required: false, default: [] },
     options: { type: Object, default: {} },
+    public: { type: Boolean, default: false },
   },
   {
     timestamps: true,
   }
 );
+PostSchema.index({ "options.title": "text" });
 const PostModel = model("post", PostSchema);
 module.exports = PostModel;
